@@ -8,10 +8,11 @@ import Product from '../Product'
 const Home = () => {
   return (
     <>
-    {/* <Navbar/> */}
+
+    <Navbar/>
     <Carousel/>
     <Product/>
-    {/* <Footer/> */}
+    <Footer/>
     </>
   )
 }
