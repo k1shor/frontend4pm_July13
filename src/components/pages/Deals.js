@@ -33,7 +33,6 @@ const Deals = () => {
             }
             else{
                 setProducts(data.filteredProducts)
-                console.log("Data:",data)
             }
         })
     },[myfilter])
