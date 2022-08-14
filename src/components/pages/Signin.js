@@ -39,7 +39,7 @@ const Signin = () => {
                 return navigate('/admin/dashboard')
             }
             else {
-                return navigate('/')
+                return navigate('/user/profile')
             }
         }
     }

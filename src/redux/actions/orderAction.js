@@ -1,18 +1,32 @@
+import axios from "axios"
+import { API } from "../../config"
 import { CREATE_ORDER_FAIL, CREATE_ORDER_REQUEST, CREATE_ORDER_SUCCESS } from "../constants/orderConstants"
 
-export const placeOrder = (order) => (dispatch, getState) => {
-    dispatch({
-        type: CREATE_ORDER_REQUEST
-    })
+export const placeOrder = (order, token) =>async (dispatch, getState) => {
+    
     try{
-        // place order in backend
         dispatch({
-            type: CREATE_ORDER_SUCCESS
+            type: CREATE_ORDER_REQUEST,
+        })
+        // place order in backend
+        const config ={
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization":`Bearer ${token}`
+            }
+        }
+
+        const {data} = await axios.post(`${API}/processpayment`, order, config)
+
+        dispatch({
+            type: CREATE_ORDER_SUCCESS, 
+            payload: data
         })
     }
-    catch{
+    catch(error){
         dispatch({
-            type: CREATE_ORDER_FAIL
+            type: CREATE_ORDER_FAIL,
+            payload:error.error
         })
     }    
 }

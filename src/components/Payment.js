@@ -1,20 +1,26 @@
 import { CardCvcElement, CardExpiryElement, CardNumberElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { toast, ToastContainer } from 'react-toastify'
 import { isAuthenticated } from '../api/userAPI'
 import { API, IMAGE } from '../config'
+import { placeOrder } from '../redux/actions/orderAction'
 import CheckoutProgress from './CheckoutProgress'
 import Footer from './layout/Footer'
 import Navbar from './layout/Navbar'
+import { useDispatch } from 'react-redux'
 
 const Payment = () => {
     const cart_items = useSelector(state => state.cart.cart_items)
     const shipping_info = useSelector(state => state.cart.shipping_info)
+    // const loading = useSelector(state=>state.order.loading)
     const {user, token} = isAuthenticated()
 
     const stripe = useStripe()
     const elements = useElements()
+    const dispatch = useDispatch()
+    const navigate = useNavigate()
 
     const options = {
         style: {
@@ -29,7 +35,7 @@ const Payment = () => {
 
     let order_info = {
         order_items: cart_items,
-        user: user,
+        user: user._id,
         total_price: sessionStorage.getItem('order_total'),
         shipping_address: shipping_info.shipping_address,
         alternate_shipping_address: shipping_info.alternate_shipping_address,
@@ -59,15 +65,48 @@ const makePayment = async (e) => {
         .then(response=>response.json())
         .catch(error=>toast.error(error))
 
-        const result = res.client_secret
+        const client_secret = res.client_secret
 
         if(!stripe || !elements){
             return
         }
+
+        let result = await stripe.confirmCardPayment(`${client_secret}`,{
+            payment_method:{
+                card: elements.getElement(CardNumberElement),
+                billing_details: {
+                    name: user.username,
+                    email: user.email
+                }
+            }
+        })
+        if(result.error){
+            toast.error(result.error.message)
+            document.getElementById('payBtn').disabled = false
+        }
+        else{
+            if(result.paymentIntent.status === 'succeeded'){
+                order_info.payment_info = {
+                    id: (await result).paymentIntent.id,
+                    status: (await result).paymentIntent.status
+                }
+                dispatch(placeOrder(order_info, token))
+                toast.success('Your order has been placed successfully')
+                localStorage.removeItem('cart_items')
+                document.getElementById('payBtn').disabled = false
+                setTimeout(()=>{
+                    navigate('/paymentSuccess')
+                },[5000])
+            }
+        }
+
+
         
 
     }
-    catch{
+    catch(error){
+            toast.error(error.message)
+            document.getElementById('payBtn').disabled = false
 
     }
 }
